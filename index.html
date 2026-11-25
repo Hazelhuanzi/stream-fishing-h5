@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#bfe9f7">
+<title>小物钓 · 溪流小钓手</title>
+<!--
+  素材与本文件必须放在同一目录结构下（双击 index.html 即可运行）：
+  assets/fishing/stream-bg.png      溪流背景
+  assets/fishing/cat-sheet.png      小猫角色设定图（仅用于 CSS 裁切）
+  assets/fishing/fish-pangpi.png    鳑鲏
+  assets/fishing/fish-baitiao.png   白条
+  assets/fishing/fish-yingu.png     银鲴
+  assets/fishing/fish-heiqiquan.png 黑鳍鳈
+  assets/fishing/splash.png         水花
+  assets/fishing/bubbles.png        气泡
+  assets/fishing/rod.png            鱼竿
+  assets/fishing/basket.png         鱼篓
+  替换素材时覆盖同名文件即可，无需改代码。
+-->
+<style>
+  :root {
+    --ink: #2d5b6b;
+    --ink-soft: #5b7f8c;
+    --blue: #35a7d6;
+    --blue-deep: #2389bd;
+    --mint: #4fc3a1;
+    --coral: #ff7d5c;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body { height: 100%; margin: 0; }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background: radial-gradient(circle at 50% 18%, #effbff 0%, #cdefff 42%, #9ed9f2 100%);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    color: var(--ink);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+
+  button { font-family: inherit; }
+  img { -webkit-user-drag: none; }
+  [hidden] { display: none !important; }
+
+  .stage {
+    position: relative;
+    width: min(100vw, calc(100vh * 9 / 16));
+    height: min(100vh, calc(100vw * 16 / 9));
+    overflow: hidden;
+    isolation: isolate;
+    background: #bfe9f7;
+    box-shadow: 0 30px 90px rgba(44, 112, 140, .3);
+  }
+  @supports (height: 100dvh) {
+    .stage {
+      width: min(100vw, calc(100dvh * 9 / 16));
+      height: min(100dvh, calc(100vw * 16 / 9));
+    }
+  }
+  @media (min-width: 640px) {
+    .stage { border-radius: 26px; }
+  }
+
+  /* ============ 场景底图 ============ */
+  .scene-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .scene-shade {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.46) 0%, rgba(255,255,255,.10) 22%, rgba(255,255,255,0) 52%, rgba(238,251,255,.42) 100%);
+  }
+
+  .bubbles {
+    position: absolute;
+    z-index: 2;
+    right: -12%;
+    bottom: -3%;
+    width: 78%;
+    opacity: .5;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    animation: bubbleFloat 10s ease-in-out infinite alternate;
+  }
+  @keyframes bubbleFloat {
+    from { transform: translateY(0) scale(1); }
+    to   { transform: translateY(-2.5%) scale(1.02); }
+  }
+
+  /* ============ 顶部 HUD ============ */
+  .hud {
+    position: absolute;
+    z-index: 8;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: calc(10px + var(--safe-top)) 10px 0;
+    pointer-events: none;
+  }
+  .hud-chip {
+    background: rgba(255, 255, 255, .74);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, .92);
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(41, 112, 139, .13);
+  }
+  .hud-left { padding: 8px 12px 9px; }
+  .hud-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    color: #2e7e99;
+    line-height: 1.15;
+  }
+  .hud-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .hud-count b { font-size: 15px; color: var(--blue-deep); }
+  .count-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    margin-left: 1px;
+    mix-blend-mode: multiply;
+  }
+  .slots {
+    display: flex;
+    gap: 6px;
+    padding: 6px;
+  }
+  .slot {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #fff;
+    border: 2px solid #fff;
+    box-shadow: inset 0 0 0 1px rgba(70, 150, 180, .14);
+  }
+  .slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.55);
+    filter: grayscale(1) brightness(1.14) opacity(.34);
+    transition: filter .35s ease;
+  }
+  .slot.got { box-shadow: 0 0 0 2px rgba(79, 195, 161, .55), 0 3px 10px rgba(41, 112, 139, .16); }
+  .slot.got img { filter: none; }
+  .slot.pop { animation: slotPop .55s ease; }
+  @keyframes slotPop {
+    0%, 100% { transform: scale(1); }
+    45% { transform: scale(1.3); }
+  }
+
+  @media (max-width: 360px) {
+    .slot { width: 30px; height: 30px; }
+    .slots { gap: 5px; padding: 5px; }
+    .hud-left { padding: 7px 10px; }
+    .hud-title { font-size: 14px; }
+    .hud-count { font-size: 11px; }
+  }
+
+  /* ============ 小猫相框（CSS 裁切设定图中央立绘） ============ */
+  .cat-frame {
+    position: absolute;
+    z-index: 4;
+    left: 4%;
+    bottom: calc(100px + var(--safe-bottom));
+    width: 47%;
+    padding: 5px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, .95);
+    box-shadow: 0 12px 28px rgba(38, 96, 120, .24), 0 2px 0 rgba(255, 255, 255, .8) inset;
+    transform: rotate(-2.5deg);
+    transition: opacity .35s ease;
+    pointer-events: none;
+  }
+  .cat-crop {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1070 / 1190;
+    overflow: hidden;
+    border-radius: 17px;
+    background: #f8f3e8;
+  }
+  /* 设定图 2848×1600，裁出中央小猫：源区域约 x 1000–2070 / y 280–1470 */
+  .cat-img {
+    position: absolute;
+    width: 266.2%;
+    max-width: none;
+    left: -93.5%;
+    top: -23.5%;
+    display: block;
+  }
+
+  .cat-frame.bobbing { animation: catBob 2.8s ease-in-out infinite; }
+  .cat-frame.nervous { animation: catBite .18s linear infinite; }
+  .cat-frame.reeling { animation: catReel .32s ease-in-out infinite alternate; }
+  .cat-frame.sad { animation: catSad .55s ease; }
+  .cat-frame.hop { animation: catHop .6s cubic-bezier(.2, 1.35, .4, 1); }
+
+  @keyframes catBob {
+    0%, 100% { transform: rotate(-2.5deg) translateY(0); }
+    50% { transform: rotate(-2.5deg) translateY(-5px); }
+  }
+  @keyframes catBite {
+    0%, 100% { transform: rotate(-2.5deg) translate(0, 0); }
+    25% { transform: rotate(-4deg) translate(-3px, -2px); }
+    75% { transform: rotate(-1deg) translate(3px, -3px); }
+  }
+  @keyframes catReel {
+    from { transform: rotate(-3.6deg) translateY(0); }
+    to { transform: rotate(-1.2deg) translateY(-6px); }
+  }
+  @keyframes catSad {
+    0%, 100% { transform: rotate(-2.5deg) translateY(0); }
+    35% { transform: rotate(-1.2deg) translateY(4px); }
+  }
+  @keyframes catHop {
+    0% { transform: rotate(-2.5deg) translateY(0) scale(1); }
+    40% { transform: rotate(-4deg) translateY(-14px) scale(1.04); }
+    70% { transform: rotate(-2deg) translateY(2px) scale(.99); }
+    100% { transform: rotate(-2.5deg) translateY(0) scale(1); }
+  }
+
+  /* ============ 鱼竿（抛竿动画） ============ */
+  .rod-wrap {
+    position: absolute;
+    z-index: 6;
+    right: -12%;
+    bottom: -2%;
+    width: 92%;
+    transform-origin: 70% 85%;
+    opacity: 0;
+    pointer-events: none;
+    /* 白底素材融入溪流：混合模式放在容器上，避免动画 opacity 造成隔离 */
+    mix-blend-mode: darken;
+    filter: brightness(1.1) contrast(1.03);
+  }
+  .rod-wrap img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  [data-state="casting"] .rod-wrap {
+    animation: rodSwing .9s cubic-bezier(.2, .75, .3, 1) both;
+  }
+  @keyframes rodSwing {
+    0% { opacity: 0; transform: rotate(18deg) translate(12%, 16%); }
+    22% { opacity: 1; }
+    48% { transform: rotate(-10deg) translate(-4%, -2%); }
+    78% { opacity: 1; }
+    100% { opacity: 0; transform: rotate(-6deg) translate(-2%, 0); }
+  }
+
+  /* ============ 浮漂水域 ============ */
+  .float-area {
+    position: absolute;
+    z-index: 3;
+    left: 53%;
+    top: 41%;
+    width: 27%;
+    aspect-ratio: 1;
+    pointer-events: none;
+  }
+  .ripple {
+    position: absolute;
+    left: 50%;
+    top: 55%;
+    width: 64%;
+    aspect-ratio: 1;
+    border: 2px solid rgba(255, 255, 255, .82);
+    border-radius: 50%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.25);
+  }
+  [data-state="waiting"] .ripple { animation: ripple 3.6s ease-out infinite; }
+  [data-state="waiting"] .ripple.r2 { animation-delay: 1.2s; }
+  [data-state="waiting"] .ripple.r3 { animation-delay: 2.4s; }
+  [data-state="bite"] .ripple { animation: ripple 1.05s ease-out infinite; border-color: rgba(255, 255, 255, .95); }
+  [data-state="reeling"] .ripple { animation: ripple 1.35s ease-out infinite; border-color: rgba(255, 255, 255, .95); }
+  @keyframes ripple {
+    0% { transform: translate(-50%, -50%) scale(.25); opacity: 0; }
+    14% { opacity: .9; }
+    100% { transform: translate(-50%, -50%) scale(1.65); opacity: 0; }
+  }
+
+  .bobber {
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    width: 16%;
+    aspect-ratio: 12 / 40;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    filter: drop-shadow(0 3px 3px rgba(40, 100, 120, .2));
+  }
+  .bobber::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 22%;
+    height: 56%;
+    min-width: 2px;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, #ff9a86 0%, #ff5f4a 100%);
+  }
+  .bobber::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 100%;
+    height: 56%;
+    transform: translateX(-50%);
+    border: 1.5px solid #e57361;
+    border-radius: 48% 48% 52% 52%;
+    background: linear-gradient(180deg, #ffffff 0%, #fff1ee 60%, #ff9c88 100%);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, .85);
+  }
+  [data-state="casting"] .bobber {
+    opacity: 1;
+    animation: bobberCast .9s cubic-bezier(.22, .8, .35, 1) both;
+  }
+  [data-state="waiting"] .bobber {
+    opacity: 1;
+    animation: bobberBob 2.4s ease-in-out infinite;
+  }
+  [data-state="bite"] .bobber {
+    opacity: 1;
+    animation: bobberBite .12s linear infinite;
+  }
+  [data-state="reeling"] .bobber {
+    opacity: 1;
+    animation: bobberBite .2s linear infinite;
+  }
+  [data-state="landing"] .bobber,
+  [data-state="miss"] .bobber {
+    opacity: 0;
+    transition: opacity .3s ease;
+  }
+  @keyframes bobberCast {
+    0% { transform: translate(calc(-50% - 150px), calc(-50% - 110px)) scale(.45) rotate(-35deg); opacity: 0; }
+    25% { opacity: 1; }
+    70% { transform: translate(calc(-50% + 10px), calc(-50% - 16px)) scale(1.06) rotate(12deg); }
+    100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+  }
+  @keyframes bobberBob {
+    0%, 100% { transform: translate(-50%, -50%); }
+    50% { transform: translate(-50%, calc(-50% + 5px)); }
+  }
+  @keyframes bobberBite {
+    0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+    25% { transform: translate(calc(-50% - 4px), calc(-50% + 2px)) rotate(-10deg); }
+    75% { transform: translate(calc(-50% + 4px), calc(-50% + 2px)) rotate(10deg); }
+  }
+
+  .splash {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    top: 54%;
+    width: 138%;
+    max-width: none;
+    transform: translate(-50%, -50%) scale(.35);
+    opacity: 0;
+    mix-blend-mode: darken;
+    filter: brightness(1.14) contrast(1.06);
+    -webkit-mask-image: radial-gradient(ellipse 52% 46% at 50% 55%, #000 38%, rgba(0, 0, 0, .8) 62%, transparent 84%);
+    mask-image: radial-gradient(ellipse 52% 46% at 50% 55%, #000 38%, rgba(0, 0, 0, .8) 62%, transparent 84%);
+    pointer-events: none;
+  }
+  .splash.show { animation: splashBurst .8s ease-out both; }
+  @keyframes splashBurst {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.35); }
+    22% { opacity: .95; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+  }
+
+  /* ============ 提示 & 收线面板 ============ */
+  .prompt {
+    position: absolute;
+    z-index: 7;
+    top: 17%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 9px 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .82);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 6px 20px rgba(41, 112, 139, .15);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    color: #2c6d82;
+    white-space: nowrap;
+    transition: background .25s ease, color .25s ease, opacity .2s ease;
+  }
+  [data-state="bite"] .prompt {
+    background: linear-gradient(135deg, #ffa36f 0%, #ff6f50 100%);
+    color: #fff;
+    animation: promptPulse .55s ease-in-out infinite alternate;
+    box-shadow: 0 8px 26px rgba(255, 100, 70, .36);
+  }
+  [data-state="landing"] .prompt {
+    background: linear-gradient(135deg, #7bd8bb 0%, #3db697 100%);
+    color: #fff;
+  }
+  [data-state="card"] .prompt { opacity: 0; }
+  [data-state="miss"] .prompt { opacity: 0; }
+  @keyframes promptPulse {
+    from { transform: translateX(-50%) scale(1); }
+    to { transform: translateX(-50%) scale(1.05); }
+  }
+
+  .reel-panel {
+    position: absolute;
+    z-index: 8;
+    top: 26.5%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 78%;
+    padding: 12px 14px 11px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .84);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, .92);
+    box-shadow: 0 10px 30px rgba(41, 112, 139, .16);
+  }
+  .reel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #2e7e99;
+  }
+  .reel-head b { font-size: 17px; color: #219c7d; }
+  .reel-ticks {
+    display: flex;
+    gap: 5px;
+    height: 12px;
+    margin-top: 8px;
+  }
+  .reel-tick {
+    flex: 1;
+    border-radius: 999px;
+    background: rgba(96, 170, 190, .18);
+    transition: background .12s ease, transform .12s ease;
+  }
+  .reel-tick.on {
+    background: linear-gradient(90deg, #5fd0ae, #34b28f);
+    transform: scaleY(1.16);
+  }
+  .reel-time {
+    height: 5px;
+    margin-top: 9px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(96, 170, 190, .16);
+  }
+  .reel-time-fill {
+    display: block;
+    height: 100%;
+    width: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ffd66b, #ff8b62);
+  }
+  .reel-hint {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #7d9aa5;
+    text-align: center;
+  }
+
+  /* ============ 底部按钮 ============ */
+  .bottom {
+    position: absolute;
+    z-index: 9;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 10px 18px calc(16px + var(--safe-bottom));
+    background: linear-gradient(180deg, rgba(240, 252, 255, 0) 0%, rgba(236, 250, 255, .76) 42%, rgba(236, 250, 255, .95) 100%);
+    transition: opacity .25s ease;
+  }
+  [data-state="card"] .bottom { opacity: 0; pointer-events: none; }
+  .action-btn {
+    display: block;
+    width: 100%;
+    height: 64px;
+    border: 0;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #66cbea 0%, #37a6d6 55%, #2b93c9 100%);
+    box-shadow: 0 8px 0 #1f7fa8, 0 12px 24px rgba(35, 137, 189, .3);
+    color: #fff;
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform .08s ease, box-shadow .08s ease, background .25s ease, opacity .2s ease;
+  }
+  .action-btn:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: 0 4px 0 #1f7fa8, 0 7px 16px rgba(35, 137, 189, .28);
+  }
+  .action-btn[data-tone="bite"] {
+    background: linear-gradient(135deg, #ffb06e 0%, #ff7b57 55%, #f2603c 100%);
+    box-shadow: 0 8px 0 #c94a2a, 0 12px 26px rgba(255, 100, 70, .38);
+    animation: btnPulse .5s ease-in-out infinite alternate;
+  }
+  .action-btn[data-tone="reel"] {
+    background: linear-gradient(135deg, #6ad7b6 0%, #43bba0 55%, #2ba184 100%);
+    box-shadow: 0 8px 0 #1c8069, 0 12px 24px rgba(43, 161, 132, .3);
+  }
+  .action-btn:disabled {
+    background: linear-gradient(135deg, #c7e6ef, #a7d2e0);
+    box-shadow: 0 8px 0 #8fb8c5, 0 12px 24px rgba(100, 150, 170, .16);
+    color: rgba(255, 255, 255, .95);
+    cursor: default;
+  }
+  @keyframes btnPulse {
+    from { box-shadow: 0 8px 0 #c94a2a, 0 12px 24px rgba(255, 100, 70, .34); }
+    to { box-shadow: 0 8px 0 #c94a2a, 0 12px 40px rgba(255, 100, 70, .6); }
+  }
+
+  /* ============ Toast ============ */
+  .toast {
+    position: absolute;
+    z-index: 12;
+    left: 50%;
+    top: 36%;
+    transform: translate(-50%, 8px);
+    padding: 10px 22px;
+    border-radius: 999px;
+    background: rgba(72, 120, 135, .9);
+    box-shadow: 0 8px 24px rgba(30, 80, 95, .25);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.bad { background: rgba(226, 108, 84, .94); }
+
+  /* ============ 科普卡片 ============ */
+  .card-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(24px + var(--safe-top)) 20px calc(24px + var(--safe-bottom));
+    background: rgba(26, 72, 88, .34);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    animation: overlayIn .25s ease;
+  }
+  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 340px;
+    max-height: 100%;
+    border-radius: 28px;
+    background: linear-gradient(180deg, #ffffff 0%, #f3fbff 58%, #e9f7fd 100%);
+    box-shadow: 0 24px 60px rgba(20, 70, 90, .36), 0 0 0 1px rgba(255, 255, 255, .85) inset;
+    animation: cardIn .45s cubic-bezier(.18, 1.35, .4, 1);
+  }
+  @keyframes cardIn {
+    0% { opacity: 0; transform: translateY(24px) scale(.9); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .card-scroll {
+    padding: 22px 20px 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 28px;
+    text-align: center;
+  }
+  .card-scroll::-webkit-scrollbar { display: none; }
+  .card-badge {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ffe08a, #ffb347);
+    box-shadow: 0 4px 12px rgba(255, 160, 60, .38);
+    color: #7a4c00;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    white-space: nowrap;
+  }
+  .card-badge.repeat {
+    background: linear-gradient(135deg, #e9f7fb, #cfeaf3);
+    box-shadow: none;
+    color: #456b7a;
+  }
+  .card-fish {
+    width: 82%;
+    aspect-ratio: 4 / 3;
+    margin: 2px auto 4px;
+    border-radius: 22px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: inset 0 0 0 1px rgba(80, 160, 185, .13);
+  }
+  .card-fish img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 46%;
+    transform: scale(1.01);
+  }
+  .card-name {
+    margin: 6px 0 0;
+    font-size: 26px;
+    letter-spacing: .14em;
+    color: #235e73;
+  }
+  .card-fact {
+    margin: 7px auto 0;
+    max-width: 290px;
+    color: #587584;
+    font-size: 13.5px;
+    line-height: 1.72;
+    text-align: left;
+  }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 14px 0 15px;
+    color: #3c8ba3;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .card-meta img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+  }
+  .release-btn {
+    display: block;
+    width: 100%;
+    height: 56px;
+    border: 0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #6ad7b6 0%, #3bb496 60%, #2a9e83 100%);
+    box-shadow: 0 6px 0 #1d8069, 0 10px 20px rgba(43, 161, 132, .28);
+    color: #fff;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: .2em;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform .08s ease, box-shadow .08s ease;
+  }
+  .release-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 3px 0 #1d8069, 0 6px 12px rgba(43, 161, 132, .25);
+  }
+
+  /* ============ 稀有度 / 成就 ============ */
+  .card-name .rarity { margin-left: 7px; vertical-align: 5px; }
+  .card-ach {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    max-width: 100%;
+    margin: 10px auto 0;
+    padding: 5px 11px;
+    border: 1px solid rgba(226, 176, 74, .55);
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fff7dd, #ffedbd);
+    color: #8a5a00;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.4;
+  }
+  .card-ach b { font-weight: 900; }
+
+  .rarity {
+    display: inline-block;
+    padding: 1px 7px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    line-height: 1.5;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .rarity.common { color: #2e7f6b; background: rgba(79, 195, 161, .16); border-color: rgba(79, 195, 161, .3); }
+  .rarity.rare { color: #9a6200; background: rgba(255, 190, 70, .2); border-color: rgba(220, 160, 40, .4); }
+  .rarity.muted { opacity: .65; filter: grayscale(.5); }
+
+  /* ============ 图鉴入口 ============ */
+  .book-fab {
+    position: absolute;
+    z-index: 7;
+    right: 12px;
+    bottom: calc(96px + var(--safe-bottom));
+    width: 58px;
+    height: 62px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 1px solid rgba(255, 255, 255, .92);
+    border-radius: 16px;
+    background: linear-gradient(160deg, rgba(255, 250, 238, .96), rgba(244, 231, 205, .94));
+    box-shadow: 0 6px 18px rgba(70, 100, 90, .22);
+    color: #7a5a2e;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(8px) scale(.96);
+    pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease;
+    touch-action: manipulation;
+  }
+  [data-state="idle"] .book-fab {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .book-fab:active { transform: scale(.95); }
+  .book-fab-icon { font-size: 20px; line-height: 1; }
+  .book-fab-text { font-size: 10px; font-weight: 800; letter-spacing: .05em; white-space: nowrap; }
+  .book-fab-text b { color: #2f8c74; font-weight: 900; }
+
+  /* ============ 图鉴书本 ============ */
+  .book-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 22;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(14px + var(--safe-top)) 14px calc(14px + var(--safe-bottom));
+    background: rgba(28, 66, 80, .42);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    animation: overlayIn .22s ease;
+  }
+  .book {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 352px;
+    max-height: 100%;
+    border-radius: 18px 24px 24px 18px;
+    background: linear-gradient(90deg, #c79b64 0 6px, #e9d3ad 6px 14px, #fffaf0 14px 50%, #fbf3e2 50% 100%);
+    box-shadow: 0 26px 70px rgba(20, 60, 70, .45), 0 0 0 1px rgba(120, 86, 45, .2) inset;
+    overflow: hidden;
+    animation: bookIn .38s cubic-bezier(.18, 1.25, .4, 1);
+  }
+  @keyframes bookIn {
+    from { opacity: 0; transform: translateY(22px) scale(.94) rotate(-1deg); }
+    to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+  }
+  .book-top {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px 8px 24px;
+  }
+  .book-title-wrap { flex: 1; min-width: 0; }
+  .book-kicker {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .28em;
+    color: #b08a55;
+  }
+  .book-title {
+    margin: 2px 0 0;
+    font-family: "Songti SC", "STSong", "SimSun", serif;
+    font-size: 21px;
+    letter-spacing: .08em;
+    line-height: 1.25;
+    color: #5b4326;
+  }
+  .book-sub { margin-top: 3px; font-size: 10px; letter-spacing: .06em; color: #9b7d55; }
+  .book-close {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .78);
+    box-shadow: 0 2px 8px rgba(100, 70, 40, .12);
+    color: #8a6b43;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .book-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 0 14px 16px 24px;
+  }
+  .book-scroll::-webkit-scrollbar { display: none; }
+
+  .book-progress-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 7px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #7f6747;
+  }
+  .book-progress-row b { font-size: 15px; color: #2f8c74; }
+  .book-bar { display: flex; gap: 4px; height: 7px; margin-bottom: 10px; }
+  .book-bar i { flex: 1; border-radius: 999px; background: rgba(160, 130, 85, .18); transition: background .3s ease; }
+  .book-bar i.on { background: linear-gradient(90deg, #7fd6b8, #3cb08e); }
+
+  .book-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .book-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 5px 6px 6px;
+    border: 1px solid #e7d6b8;
+    border-radius: 13px;
+    background: rgba(255, 255, 255, .62);
+    box-shadow: 0 2px 6px rgba(120, 90, 50, .06);
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    touch-action: manipulation;
+    transition: transform .1s ease, box-shadow .2s ease;
+  }
+  .book-tile:active { transform: scale(.98); }
+  .book-tile.got { background: rgba(255, 253, 246, .9); box-shadow: 0 3px 10px rgba(120, 90, 50, .1); }
+  .book-tile-img {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    border-radius: 9px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: inset 0 0 0 1px rgba(120, 160, 150, .12);
+  }
+  .book-tile-img img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 46%;
+  }
+  .book-tile.locked .book-tile-img img { filter: grayscale(1) brightness(.82) opacity(.38); }
+  .book-tile.locked .book-tile-img::after {
+    content: "？";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Songti SC", "STSong", "SimSun", serif;
+    font-size: 30px;
+    font-weight: 800;
+    color: rgba(110, 90, 60, .35);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .7);
+  }
+  .book-tile.got .book-tile-img::after {
+    content: "✓";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(60, 176, 142, .92);
+    box-shadow: 0 2px 5px rgba(40, 120, 100, .25);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 900;
+  }
+  .book-tile-name {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    font-size: 12.5px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    color: #5b4326;
+  }
+  .book-tile.locked .book-tile-name { color: #b3a58d; letter-spacing: .18em; }
+
+  .book-section-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 11px 0 6px;
+    font-family: "Songti SC", "STSong", "SimSun", serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    color: #664c2b;
+  }
+  .book-section-title small { font-family: inherit; font-size: 9px; letter-spacing: .08em; color: #a98a5f; font-weight: 700; }
+  .ach-list { display: flex; flex-direction: column; gap: 6px; }
+  .ach-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border: 1px solid rgba(200, 175, 135, .4);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, .45);
+    opacity: .68;
+  }
+  .ach-row.done {
+    opacity: 1;
+    border-color: rgba(226, 176, 74, .65);
+    background: linear-gradient(135deg, rgba(255, 248, 224, .9), rgba(255, 238, 196, .65));
+    box-shadow: 0 2px 6px rgba(200, 150, 50, .1);
+  }
+  .ach-icon {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(160, 130, 85, .12);
+    font-size: 16px;
+  }
+  .ach-row.done .ach-icon { background: linear-gradient(135deg, #ffe39a, #ffc45e); box-shadow: 0 2px 5px rgba(230, 150, 40, .25); }
+  .ach-body { flex: 1; min-width: 0; }
+  .ach-name { font-size: 11.5px; font-weight: 800; color: #5b4326; }
+  .ach-desc { margin-top: 1px; font-size: 9.5px; color: #a0845d; }
+  .ach-state { flex: 0 0 auto; font-size: 9px; font-weight: 800; color: #b3a58d; }
+  .ach-row.done .ach-state { color: #b07a00; }
+
+  .book-reset {
+    display: block;
+    width: 100%;
+    height: 36px;
+    margin-top: 0;
+    border: 1px dashed #d6c1a0;
+    border-radius: 11px;
+    background: transparent;
+    color: #a98a5f;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .book-reset.armed { color: #c0503a; border-color: #dda18c; background: #fff4ef; }
+  .book-reset.reset-done { color: #2f8c74; border-color: #95cfbb; background: #effaf5; }
+  .book-footer {
+    flex: 0 0 auto;
+    padding: 5px 14px 7px 24px;
+    border-top: 1px solid rgba(160, 130, 85, .18);
+    background: rgba(255, 250, 240, .72);
+  }
+
+  .book-close:focus,
+  .book-back:focus,
+  .book-reset:focus,
+  .book-fab:focus,
+  .book-tile:focus,
+  .action-btn:focus,
+  .release-btn:focus {
+    outline: 2px solid rgba(53, 167, 214, .55);
+    outline-offset: 2px;
+  }
+
+  .book-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 34px;
+    margin: 0 0 10px;
+    padding: 0 13px;
+    border: 1px solid #e3d2b5;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .65);
+    color: #8a6b43;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .book-detail-fish {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: inset 0 0 0 1px rgba(120, 160, 150, .14);
+  }
+  .book-detail-fish img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 46%;
+  }
+  .book-detail-fish.locked img { filter: grayscale(1) brightness(.8) opacity(.38); }
+  .book-detail-fish.locked::after {
+    content: "？";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Songti SC", "STSong", "SimSun", serif;
+    font-size: 52px;
+    font-weight: 800;
+    color: rgba(100, 80, 50, .35);
+  }
+  .book-detail-head { display: flex; align-items: center; gap: 7px; margin-top: 11px; }
+  .book-detail-name {
+    margin: 0;
+    font-family: "Songti SC", "STSong", "SimSun", serif;
+    font-size: 24px;
+    letter-spacing: .08em;
+    color: #5b4326;
+  }
+  .book-detail-no { margin-top: 2px; font-size: 9px; letter-spacing: .24em; color: #b39a74; }
+  .book-detail-fact { margin: 10px 0 0; font-size: 12.5px; line-height: 1.75; color: #7a6244; }
+  .book-detail-status {
+    margin-top: 12px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(79, 195, 161, .12);
+    color: #2e7f6b;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .book-detail-status.locked { background: rgba(160, 130, 85, .1); color: #a0845d; }
+
+  @media (max-width: 360px) {
+    .book-top { padding: 12px 10px 8px 20px; }
+    .book-title { font-size: 19px; }
+    .book-scroll { padding: 0 10px 12px 20px; }
+    .book-grid { gap: 7px; }
+    .book-tile { padding: 5px; }
+    .book-tile-name { font-size: 11px; }
+    .book-fab { right: 10px; width: 54px; height: 58px; }
+    .book-fab-icon { font-size: 18px; }
+  }
+
+  @media (max-height: 620px) {
+    .card-fish { width: 66%; }
+    .card-name { font-size: 23px; }
+    .card-fact { font-size: 12.5px; }
+    .cat-frame { width: 42%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bubbles, .slot.pop, .prompt, .action-btn[data-tone="bite"], .cat-frame.bobbing,
+    .cat-frame.nervous, .cat-frame.reeling, .cat-frame.sad, .cat-frame.hop { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage" data-state="idle">
+
+  <img class="scene-bg" src="./assets/fishing/stream-bg.png" alt="" draggable="false" decoding="async">
+  <div class="scene-shade"></div>
+  <img class="bubbles" src="./assets/fishing/bubbles.png" alt="" draggable="false" decoding="async">
+
+  <!-- 顶部收集 -->
+  <header class="hud">
+    <div class="hud-chip hud-left">
+      <div class="hud-title">小物钓</div>
+      <div class="hud-count">已收集 <b id="collectCount">0</b> / 4
+        <img class="count-icon" src="./assets/fishing/basket.png" alt="鱼篓" draggable="false">
+      </div>
+    </div>
+    <div class="hud-chip slots" id="slots" aria-label="鱼种收集进度"></div>
+  </header>
+
+  <!-- 小猫相框：裁切 cat-sheet.png 中央立绘 -->
+  <div class="cat-frame" id="catFrame">
+    <div class="cat-crop">
+      <img class="cat-img" src="./assets/fishing/cat-sheet.png" alt="钓鱼小猫" draggable="false" decoding="async">
+    </div>
+  </div>
+
+  <!-- 抛竿时扫入的鱼竿 -->
+  <div class="rod-wrap"><img src="./assets/fishing/rod.png" alt="" draggable="false" decoding="async"></div>
+
+  <!-- 浮漂水域 -->
+  <div class="float-area">
+    <div class="ripple r1"></div>
+    <div class="ripple r2"></div>
+    <div class="ripple r3"></div>
+    <img class="splash" id="splash" src="./assets/fishing/splash.png" alt="" draggable="false" decoding="async">
+    <div class="bobber"></div>
+  </div>
+
+  <div class="prompt" id="prompt" role="status" aria-live="polite">溪水清浅，抛一竿试试</div>
+
+  <!-- 收线进度 -->
+  <div class="reel-panel" id="reelPanel" hidden>
+    <div class="reel-head">
+      <span>收线进度</span>
+      <span><b id="reelCount">0</b> / 5</span>
+    </div>
+    <div class="reel-ticks">
+      <i class="reel-tick"></i><i class="reel-tick"></i><i class="reel-tick"></i><i class="reel-tick"></i><i class="reel-tick"></i>
+    </div>
+    <div class="reel-time"><i class="reel-time-fill" id="reelTimeFill"></i></div>
+    <div class="reel-hint">3 秒内点满 5 次</div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- 底部操作 -->
+  <div class="bottom">
+    <button class="action-btn" id="actionBtn" data-tone="normal" type="button">抛竿</button>
+  </div>
+
+  <!-- 图鉴入口：只在岸边显示 -->
+  <button class="book-fab" id="bookFab" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="打开图鉴，已收集 0 / 4">
+    <span class="book-fab-icon" aria-hidden="true">📖</span>
+    <span class="book-fab-text">图鉴 <b id="bookFabCount">0/4</b></span>
+  </button>
+
+  <!-- 科普卡片 -->
+  <div class="card-overlay" id="cardOverlay" hidden>
+    <div class="card" id="card">
+      <div class="card-badge" id="cardBadge">新鱼种！</div>
+      <div class="card-scroll">
+        <div class="card-fish"><img id="cardFish" src="./assets/fishing/fish-pangpi.png" alt=""></div>
+        <h2 class="card-name"><span id="cardName">鳑鲏</span><span class="rarity common" id="cardRarity">常见</span></h2>
+        <p class="card-fact" id="cardFact"></p>
+        <div class="card-ach" id="cardAch" hidden><span aria-hidden="true">🏅</span><span id="cardAchText"></span></div>
+        <div class="card-meta">
+          <img src="./assets/fishing/basket.png" alt="" draggable="false">
+          <span id="cardProgress">已收集 0 / 4</span>
+        </div>
+        <button class="release-btn" id="releaseBtn" type="button">放流</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 溪流小物钓图鉴 -->
+  <div class="book-overlay" id="bookOverlay" hidden>
+    <div class="book" role="dialog" aria-modal="true" aria-labelledby="bookTitle">
+      <div class="book-top">
+        <div class="book-title-wrap">
+          <div class="book-kicker">小物钓观察手册</div>
+          <h2 class="book-title" id="bookTitle">溪流小物钓图鉴</h2>
+          <div class="book-sub">点亮每一格，认识溪流里的小居民</div>
+        </div>
+        <button class="book-close" id="bookClose" type="button" aria-label="合上图鉴">×</button>
+      </div>
+      <div class="book-scroll" id="bookScroll">
+        <section id="bookHome">
+          <div class="book-progress-row">
+            <span>已点亮</span>
+            <span><b id="bookProgressCount">0</b> / 4</span>
+          </div>
+          <div class="book-bar" id="bookBar" aria-hidden="true">
+            <i></i><i></i><i></i><i></i>
+          </div>
+          <div class="book-grid" id="bookGrid"></div>
+          <div class="book-section-title"><span>钓鱼成就</span><small>共 4 项</small></div>
+          <div class="ach-list" id="bookAchievements"></div>
+        </section>
+        <section id="bookDetail" hidden>
+          <button class="book-back" id="bookBack" type="button">← 返回图鉴</button>
+          <div class="book-detail-fish" id="bookDetailFishWrap">
+            <img id="bookDetailFish" src="./assets/fishing/fish-pangpi.png" alt="">
+          </div>
+          <div class="book-detail-head">
+            <h3 class="book-detail-name" id="bookDetailName">鳑鲏</h3>
+            <span class="rarity common" id="bookDetailRarity">常见</span>
+          </div>
+          <div class="book-detail-no" id="bookDetailNo">NO.01</div>
+          <p class="book-detail-fact" id="bookDetailFact"></p>
+          <div class="book-detail-status" id="bookDetailStatus">已点亮</div>
+        </section>
+      </div>
+      <div class="book-footer">
+        <button class="book-reset" id="bookReset" type="button">重置图鉴</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ======== 可调参数 ========
+  var CONFIG = {
+    WAIT_MIN: 3000,      // 等待咬钩最短
+    WAIT_MAX: 8000,      // 等待咬钩最长
+    BITE_WINDOW: 1500,   // 抬竿窗口
+    CATCH_RATE: 0.7,     // 窗口内抬竿中鱼率
+    REEL_TAPS: 5,        // 收线点击次数
+    REEL_TIMEOUT: 3000,  // 收线时限
+    CAST_ANIM: 900,      // 抛竿动画
+    MISS_HOLD: 1500,     // 跑鱼提示停留
+    CARD_DELAY: 420,     // 中鱼到卡片弹出
+    COMMON_WEIGHT: 35,   // 常见鱼（鳑鲏、白条）权重
+    RARE_WEIGHT: 15      // 稀有鱼（银鲴、黑鳍鳈）权重
+  };
+
+  var FISH = [
+    {
+      id: 'pangpi',
+      name: '鳑鲏',
+      rarity: 'common',
+      img: './assets/fishing/fish-pangpi.png',
+      fact: '繁殖期的雄鱼身披绚丽彩衣，会把卵产进河蚌的鳃腔里，由河蚌悄悄帮忙护卵。'
+    },
+    {
+      id: 'baitiao',
+      name: '白条',
+      rarity: 'common',
+      img: './assets/fishing/fish-baitiao.png',
+      fact: '中上层的小快鱼，游速飞快，最爱成群在水面追逐落水的虫子，是溪边最常见的“抢食王”。'
+    },
+    {
+      id: 'yingu',
+      name: '银鲴',
+      rarity: 'rare',
+      img: './assets/fishing/fish-yingu.png',
+      fact: '常贴着石头刮食藻类和有机碎屑，是溪流里勤快的“清洁工”，能让水质更清亮。'
+    },
+    {
+      id: 'heiqiquan',
+      name: '黑鳍鳈',
+      rarity: 'rare',
+      img: './assets/fishing/fish-heiqiquan.png',
+      fact: '底栖小型鱼，体侧有一条黑色纵纹，喜欢砾石底的清凉溪流与缓慢水流。'
+    }
+  ];
+
+  function findFish(id) {
+    return FISH.filter(function (f) { return f.id === id; })[0] || null;
+  }
+
+  function rarityText(fish) {
+    return fish.rarity === 'rare' ? '稀有' : '常见';
+  }
+
+  // 成就全部由已收集图鉴推导，重置图鉴后会一起归零
+  var ACHIEVEMENTS = [
+    {
+      id: 'first', icon: '🌱', name: '初次相识', desc: '钓到第 1 种鱼', target: 1,
+      progress: function (set) { return set.size; }
+    },
+    {
+      id: 'angler', icon: '🎣', name: '钓鱼达人', desc: '收集 3 种不同的鱼', target: 3,
+      progress: function (set) { return set.size; }
+    },
+    {
+      id: 'rare', icon: '✨', name: '稀有发现', desc: '钓到任意一种稀有鱼（银鲴 / 黑鳍鳈）', target: 1,
+      progress: function (set) {
+        return Array.from(set).filter(function (id) {
+          var f = findFish(id);
+          return f && f.rarity === 'rare';
+        }).length;
+      }
+    },
+    {
+      id: 'master', icon: '🏅', name: '溪流图鉴大师', desc: '集齐图鉴全部 4 种鱼', target: 4,
+      progress: function (set) { return set.size; }
+    }
+  ];
+
+  function isAchievementDone(achievement, set) {
+    return achievement.progress(set) >= achievement.target;
+  }
+
+  var STORAGE_KEY = 'xiaowudiao.collected.v1';
+
+  var stage = document.getElementById('stage');
+  var actionBtn = document.getElementById('actionBtn');
+  var promptEl = document.getElementById('prompt');
+  var toastEl = document.getElementById('toast');
+  var slotsEl = document.getElementById('slots');
+  var countEl = document.getElementById('collectCount');
+  var reelPanel = document.getElementById('reelPanel');
+  var reelCountEl = document.getElementById('reelCount');
+  var reelTicks = Array.prototype.slice.call(document.querySelectorAll('.reel-tick'));
+  var reelTimeFill = document.getElementById('reelTimeFill');
+  var splash = document.getElementById('splash');
+  var catFrame = document.getElementById('catFrame');
+  var cardOverlay = document.getElementById('cardOverlay');
+  var cardBadge = document.getElementById('cardBadge');
+  var cardFishImg = document.getElementById('cardFish');
+  var cardName = document.getElementById('cardName');
+  var cardRarity = document.getElementById('cardRarity');
+  var cardFact = document.getElementById('cardFact');
+  var cardAch = document.getElementById('cardAch');
+  var cardAchText = document.getElementById('cardAchText');
+  var cardProgress = document.getElementById('cardProgress');
+  var releaseBtn = document.getElementById('releaseBtn');
+
+  var bookFab = document.getElementById('bookFab');
+  var bookFabCount = document.getElementById('bookFabCount');
+  var bookOverlay = document.getElementById('bookOverlay');
+  var bookClose = document.getElementById('bookClose');
+  var bookScroll = document.getElementById('bookScroll');
+  var bookHome = document.getElementById('bookHome');
+  var bookDetail = document.getElementById('bookDetail');
+  var bookGrid = document.getElementById('bookGrid');
+  var bookProgressCount = document.getElementById('bookProgressCount');
+  var bookBar = document.getElementById('bookBar');
+  var bookAchievements = document.getElementById('bookAchievements');
+  var bookReset = document.getElementById('bookReset');
+  var bookBack = document.getElementById('bookBack');
+  var bookDetailFish = document.getElementById('bookDetailFish');
+  var bookDetailFishWrap = document.getElementById('bookDetailFishWrap');
+  var bookDetailName = document.getElementById('bookDetailName');
+  var bookDetailRarity = document.getElementById('bookDetailRarity');
+  var bookDetailNo = document.getElementById('bookDetailNo');
+  var bookDetailFact = document.getElementById('bookDetailFact');
+  var bookDetailStatus = document.getElementById('bookDetailStatus');
+
+  var state = 'idle';
+  var taps = 0;
+  var collected = new Set();
+  var timers = new Set();
+  var bookOpen = false;
+  var resetArmed = false;
+  var resetTimer = null;
+  var resetNoticeTimer = null;
+
+  var PROMPT = {
+    idle: '溪水清浅，抛一竿试试',
+    casting: '抛竿——',
+    waiting: '静候鱼讯…',
+    bite: '咬钩！快抬竿！',
+    reeling: '连续点击收线！',
+    landing: '中鱼啦！',
+    miss: '……',
+    card: ''
+  };
+
+  var BUTTON = {
+    idle:    ['抛竿', false, 'normal'],
+    casting: ['抛竿中…', true, 'normal'],
+    waiting: ['等鱼咬钩…', true, 'normal'],
+    bite:    ['抬竿！', false, 'bite'],
+    reeling: ['收线 +1', false, 'reel'],
+    landing: ['收竿中…', true, 'normal'],
+    miss:    ['收竿…', true, 'normal'],
+    card:    ['', true, 'normal']
+  };
+
+  // ======== 计时器统一管理 ========
+  function delay(fn, ms) {
+    var id = setTimeout(function () {
+      timers.delete(id);
+      fn();
+    }, ms);
+    timers.add(id);
+    return id;
+  }
+  function clearTimers() {
+    timers.forEach(function (id) { clearTimeout(id); });
+    timers.clear();
+  }
+
+  // ======== 存档 ========
+  function loadCollected() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      var ids = JSON.parse(raw);
+      if (!Array.isArray(ids)) return;
+      ids.forEach(function (id) {
+        if (FISH.some(function (f) { return f.id === id; })) collected.add(id);
+      });
+    } catch (err) { /* file:// 或隐私模式不支持时，退化为内存态 */ }
+  }
+  function saveCollected() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(collected)));
+    } catch (err) { /* 忽略存储失败 */ }
+  }
+
+  // ======== 顶部收集槽 ========
+  function buildSlots() {
+    FISH.forEach(function (fish) {
+      var slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.dataset.id = fish.id;
+      var img = document.createElement('img');
+      img.src = fish.img;
+      img.alt = fish.name;
+      img.draggable = false;
+      slot.appendChild(img);
+      slotsEl.appendChild(slot);
+    });
+    refreshSlots();
+  }
+
+  function refreshSlots() {
+    var slotList = slotsEl.querySelectorAll('.slot');
+    Array.prototype.forEach.call(slotList, function (slot) {
+      var got = collected.has(slot.dataset.id);
+      var fish = FISH.filter(function (f) { return f.id === slot.dataset.id; })[0];
+      slot.classList.toggle('got', got);
+      slot.setAttribute('aria-label', fish.name + (got ? '（已收集）' : '（未收集）'));
+    });
+    countEl.textContent = String(collected.size);
+    bookFabCount.textContent = collected.size + '/4';
+    bookFab.setAttribute('aria-label', '打开图鉴，已收集 ' + collected.size + ' / 4');
+  }
+
+  function popSlot(id) {
+    var slot = slotsEl.querySelector('[data-id="' + id + '"]');
+    if (!slot) return;
+    slot.classList.remove('pop');
+    void slot.offsetWidth;
+    slot.classList.add('pop');
+    slot.addEventListener('animationend', function () {
+      slot.classList.remove('pop');
+    }, { once: true });
+  }
+
+  // ======== 状态渲染 ========
+  function renderState() {
+    stage.dataset.state = state;
+    promptEl.textContent = PROMPT[state] || '';
+
+    var btn = BUTTON[state];
+    actionBtn.textContent = btn[0];
+    actionBtn.disabled = btn[1];
+    actionBtn.dataset.tone = btn[2];
+
+    reelPanel.hidden = state !== 'reeling';
+  }
+
+  function setCatMood(mood) {
+    var moods = ['bobbing', 'nervous', 'reeling', 'sad', 'hop'];
+    catFrame.classList.remove.apply(catFrame.classList, moods);
+    if (mood) {
+      void catFrame.offsetWidth;
+      catFrame.classList.add(mood);
+    }
+  }
+
+  function updateReelUI() {
+    reelCountEl.textContent = String(taps);
+    reelTicks.forEach(function (tick, i) {
+      tick.classList.toggle('on', i < taps);
+    });
+  }
+
+  function resetReelBar() {
+    reelTimeFill.style.transition = 'none';
+    reelTimeFill.style.width = '100%';
+  }
+
+  function burstSplash() {
+    splash.classList.remove('show');
+    void splash.offsetWidth;
+    splash.classList.add('show');
+  }
+  splash.addEventListener('animationend', function () {
+    splash.classList.remove('show');
+  });
+
+  function showToast(msg, bad) {
+    toastEl.textContent = msg;
+    toastEl.classList.toggle('bad', !!bad);
+    toastEl.classList.remove('show');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    delay(function () { toastEl.classList.remove('show'); }, 1300);
+  }
+
+  // ======== 流程 ========
+  function enterIdle() {
+    clearTimers();
+    state = 'idle';
+    taps = 0;
+    resetReelBar();
+    updateReelUI();
+    cardOverlay.hidden = true;
+    toastEl.classList.remove('show');
+    splash.classList.remove('show');
+    setCatMood('');
+    renderState();
+  }
+
+  function startCast() {
+    if (state !== 'idle') return;
+    clearTimers();
+    state = 'casting';
+    resetReelBar();
+    taps = 0;
+    updateReelUI();
+    setCatMood('');
+    renderState();
+
+    delay(function () {
+      if (state !== 'casting') return;
+      state = 'waiting';
+      setCatMood('bobbing');
+      renderState();
+
+      var wait = CONFIG.WAIT_MIN + Math.random() * (CONFIG.WAIT_MAX - CONFIG.WAIT_MIN);
+      delay(startBite, wait);
+    }, CONFIG.CAST_ANIM);
+  }
+
+  function startBite() {
+    if (state !== 'waiting') return;
+    clearTimers();
+    state = 'bite';
+    setCatMood('nervous');
+    renderState();
+    burstSplash();
+
+    delay(function () {
+      if (state === 'bite') miss('迟疑了，鱼跑了');
+    }, CONFIG.BITE_WINDOW);
+  }
+
+  function attemptHook() {
+    if (state !== 'bite') return;
+    clearTimers();
+
+    if (Math.random() < CONFIG.CATCH_RATE) {
+      startReeling();
+    } else {
+      miss('跑鱼了…');
+    }
+  }
+
+  function startReeling() {
+    clearTimers();
+    state = 'reeling';
+    taps = 0;
+    updateReelUI();
+    resetReelBar();
+    setCatMood('reeling');
+    renderState();
+    burstSplash();
+
+    // 收线总时限进度条
+    void reelTimeFill.offsetWidth;
+    reelTimeFill.style.transition = 'width ' + CONFIG.REEL_TIMEOUT + 'ms linear';
+    reelTimeFill.style.width = '0%';
+
+    delay(function () {
+      if (state === 'reeling') miss('线松了，鱼跑了');
+    }, CONFIG.REEL_TIMEOUT);
+  }
+
+  function reelTap() {
+    if (state !== 'reeling') return;
+    taps += 1;
+    updateReelUI();
+
+    if (taps >= CONFIG.REEL_TAPS) {
+      succeedReel();
+    }
+  }
+
+  function pickFish() {
+    var weights = FISH.map(function (fish) {
+      return fish.rarity === 'rare' ? CONFIG.RARE_WEIGHT : CONFIG.COMMON_WEIGHT;
+    });
+    var total = weights.reduce(function (sum, w) { return sum + w; }, 0);
+    var roll = Math.random() * total;
+    for (var i = 0; i < FISH.length; i++) {
+      roll -= weights[i];
+      if (roll < 0) return FISH[i];
+    }
+    return FISH[FISH.length - 1];
+  }
+
+  function succeedReel() {
+    clearTimers();
+    taps = CONFIG.REEL_TAPS;
+    updateReelUI();
+    state = 'landing';
+    setCatMood('hop');
+    renderState();
+    burstSplash();
+
+    var fish = pickFish();
+    var isNew = !collected.has(fish.id);
+    var newAchievements = [];
+
+    if (isNew) {
+      var beforeIds = ACHIEVEMENTS.filter(function (a) {
+        return isAchievementDone(a, collected);
+      }).map(function (a) { return a.id; });
+
+      collected.add(fish.id);
+      saveCollected();
+      refreshSlots();
+      popSlot(fish.id);
+
+      newAchievements = ACHIEVEMENTS.filter(function (a) {
+        return isAchievementDone(a, collected) && beforeIds.indexOf(a.id) === -1;
+      });
+    }
+
+    delay(function () { showCard(fish, isNew, newAchievements); }, CONFIG.CARD_DELAY);
+  }
+
+  function showCard(fish, isNew, newAchievements) {
+    state = 'card';
+    renderState();
+
+    cardFishImg.src = fish.img;
+    cardFishImg.alt = fish.name;
+    cardName.textContent = fish.name;
+    cardRarity.textContent = rarityText(fish);
+    cardRarity.className = 'rarity ' + fish.rarity;
+    cardFact.textContent = fish.fact;
+    cardProgress.textContent = collected.size >= FISH.length
+      ? '已收集 4 / 4 · 图鉴集齐'
+      : '已收集 ' + collected.size + ' / 4';
+
+    if (newAchievements && newAchievements.length) {
+      cardAch.hidden = false;
+      cardAchText.textContent = '解锁成就 · ' + newAchievements.map(function (a) { return a.name; }).join('、');
+    } else {
+      cardAch.hidden = true;
+      cardAchText.textContent = '';
+    }
+
+    if (isNew && collected.size >= FISH.length) {
+      cardBadge.textContent = '图鉴集齐！';
+    } else if (isNew) {
+      cardBadge.textContent = '新鱼种！';
+    } else {
+      cardBadge.textContent = '已收集过';
+    }
+    cardBadge.classList.toggle('repeat', !isNew);
+
+    cardOverlay.hidden = false;
+  }
+
+  function miss(msg) {
+    clearTimers();
+    taps = 0;
+    resetReelBar();
+    updateReelUI();
+    state = 'miss';
+    setCatMood('sad');
+    renderState();
+    burstSplash();
+    showToast(msg, true);
+
+    delay(enterIdle, CONFIG.MISS_HOLD);
+  }
+
+  // ======== 图鉴 ========
+  function disarmReset() {
+    resetArmed = false;
+    clearTimeout(resetTimer);
+    resetTimer = null;
+    bookReset.classList.remove('armed');
+    if (!bookReset.classList.contains('reset-done')) {
+      bookReset.textContent = '重置图鉴';
+    }
+  }
+
+  function armReset() {
+    resetArmed = true;
+    clearTimeout(resetTimer);
+    clearTimeout(resetNoticeTimer);
+    bookReset.classList.remove('reset-done');
+    bookReset.textContent = '再点一次确认重置';
+    bookReset.classList.add('armed');
+    resetTimer = setTimeout(disarmReset, 3000);
+  }
+
+  function showBookHome() {
+    bookHome.hidden = false;
+    bookDetail.hidden = true;
+    bookScroll.scrollTop = 0;
+    disarmReset();
+  }
+
+  function openFishDetail(fish) {
+    var got = collected.has(fish.id);
+    var idx = FISH.indexOf(fish);
+
+    bookHome.hidden = true;
+    bookDetail.hidden = false;
+    bookDetailFish.src = fish.img;
+    bookDetailFish.alt = got ? fish.name : '尚未发现的鱼';
+    bookDetailFishWrap.classList.toggle('locked', !got);
+    bookDetailName.textContent = got ? fish.name : '？？？';
+    bookDetailRarity.textContent = rarityText(fish);
+    bookDetailRarity.className = 'rarity ' + fish.rarity + (got ? '' : ' muted');
+    bookDetailNo.textContent = 'NO.' + String(idx + 1).padStart(2, '0') + (got ? ' · 已点亮' : ' · 未点亮');
+    bookDetailFact.textContent = got
+      ? fish.fact
+      : '还没有遇见这种鱼。稀有鱼种更爱清凉的砾石底，耐心多抛几竿吧。';
+    bookDetailStatus.textContent = got
+      ? '已点亮 · 图鉴第 ' + (idx + 1) + ' 格'
+      : '未点亮 · 继续去溪边找找看';
+    bookDetailStatus.classList.toggle('locked', !got);
+    bookScroll.scrollTop = 0;
+  }
+
+  function renderBook() {
+    bookGrid.innerHTML = '';
+
+    FISH.forEach(function (fish) {
+      var got = collected.has(fish.id);
+      var tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'book-tile ' + (got ? 'got' : 'locked');
+      tile.setAttribute('aria-label', got
+        ? fish.name + '，' + rarityText(fish) + '，查看科普'
+        : '未发现的' + rarityText(fish) + '鱼');
+
+      var imgWrap = document.createElement('div');
+      imgWrap.className = 'book-tile-img';
+      var img = document.createElement('img');
+      img.src = fish.img;
+      img.alt = got ? fish.name : '';
+      img.draggable = false;
+      imgWrap.appendChild(img);
+
+      var nameRow = document.createElement('div');
+      nameRow.className = 'book-tile-name';
+      var nameSpan = document.createElement('span');
+      nameSpan.textContent = got ? fish.name : '？？？';
+      var tag = document.createElement('span');
+      tag.className = 'rarity ' + fish.rarity + (got ? '' : ' muted');
+      tag.textContent = rarityText(fish);
+      nameRow.appendChild(nameSpan);
+      nameRow.appendChild(tag);
+
+      tile.appendChild(imgWrap);
+      tile.appendChild(nameRow);
+      tile.addEventListener('click', function () { openFishDetail(fish); });
+      bookGrid.appendChild(tile);
+    });
+
+    bookProgressCount.textContent = String(collected.size);
+    Array.prototype.forEach.call(bookBar.children, function (seg, i) {
+      seg.classList.toggle('on', i < collected.size);
+    });
+
+    bookAchievements.innerHTML = '';
+    ACHIEVEMENTS.forEach(function (a) {
+      var done = isAchievementDone(a, collected);
+      var row = document.createElement('div');
+      row.className = 'ach-row' + (done ? ' done' : '');
+
+      var icon = document.createElement('div');
+      icon.className = 'ach-icon';
+      icon.textContent = a.icon;
+
+      var body = document.createElement('div');
+      body.className = 'ach-body';
+      var name = document.createElement('div');
+      name.className = 'ach-name';
+      name.textContent = a.name;
+      var desc = document.createElement('div');
+      desc.className = 'ach-desc';
+      desc.textContent = a.desc;
+      body.appendChild(name);
+      body.appendChild(desc);
+
+      var stateEl = document.createElement('div');
+      stateEl.className = 'ach-state';
+      stateEl.textContent = done
+        ? '已达成'
+        : Math.min(a.progress(collected), a.target) + ' / ' + a.target;
+
+      row.appendChild(icon);
+      row.appendChild(body);
+      row.appendChild(stateEl);
+      bookAchievements.appendChild(row);
+    });
+
+    disarmReset();
+    bookReset.classList.remove('reset-done');
+  }
+
+  function openBook() {
+    if (state !== 'idle' || bookOpen) return;
+    bookOpen = true;
+    showBookHome();
+    renderBook();
+    bookOverlay.hidden = false;
+    bookFab.setAttribute('aria-expanded', 'true');
+    bookClose.focus({ preventScroll: true });
+  }
+
+  function closeBook() {
+    if (!bookOpen) return;
+    bookOpen = false;
+    bookOverlay.hidden = true;
+    bookFab.setAttribute('aria-expanded', 'false');
+    disarmReset();
+    clearTimeout(resetNoticeTimer);
+    bookReset.classList.remove('reset-done');
+    bookReset.textContent = '重置图鉴';
+    bookFab.focus({ preventScroll: true });
+  }
+
+  function finishReset() {
+    collected.clear();
+    saveCollected();
+    refreshSlots();
+    showBookHome();
+    renderBook();
+    clearTimeout(resetNoticeTimer);
+    bookReset.textContent = '图鉴已重置';
+    bookReset.classList.add('reset-done');
+    resetNoticeTimer = setTimeout(function () {
+      bookReset.classList.remove('reset-done');
+      bookReset.textContent = '重置图鉴';
+    }, 1600);
+  }
+
+  // ======== 交互 ========
+  actionBtn.addEventListener('click', function () {
+    if (state === 'idle') startCast();
+    else if (state === 'bite') attemptHook();
+    else if (state === 'reeling') reelTap();
+  });
+
+  releaseBtn.addEventListener('click', function () {
+    if (state !== 'card') return;
+    cardOverlay.hidden = true;
+    enterIdle();
+  });
+
+  bookFab.addEventListener('click', openBook);
+  bookClose.addEventListener('click', closeBook);
+  bookOverlay.addEventListener('click', function (e) {
+    if (e.target === bookOverlay) closeBook();
+  });
+  bookBack.addEventListener('click', function () {
+    showBookHome();
+    renderBook();
+  });
+  bookReset.addEventListener('click', function () {
+    if (!resetArmed) {
+      armReset();
+      return;
+    }
+    disarmReset();
+    finishReset();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && bookOpen) closeBook();
+  });
+
+  // 预加载四张鱼图，避免卡片弹出一瞬间空白
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      FISH.forEach(function (fish) {
+        var img = new Image();
+        img.src = fish.img;
+      });
+    }, 250);
+  });
+
+  // ======== 初始化 ========
+  loadCollected();
+  buildSlots();
+  resetReelBar();
+  updateReelUI();
+  renderState();
+})();
+</script>
+</body>
+</html>
