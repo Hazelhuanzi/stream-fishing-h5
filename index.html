@@ -8,16 +8,18 @@
 <!--
   素材与本文件必须放在同一目录结构下（双击 index.html 即可运行）：
   assets/fishing/stream-bg.png      溪流背景
-  assets/fishing/cat-sheet.png      小猫角色设定图（仅用于 CSS 裁切）
+  assets/fishing/paws-*.png         第一人称猫爪（待补；当前用 CSS 占位）
+  assets/fishing/rod-fp.png         第一人称鱼竿（待补；当前用 CSS 占位）
   assets/fishing/fish-pangpi.png    鳑鲏
   assets/fishing/fish-baitiao.png   白条
   assets/fishing/fish-yingu.png     银鲴
   assets/fishing/fish-heiqiquan.png 黑鳍鳈
   assets/fishing/splash.png         水花
   assets/fishing/bubbles.png        气泡
-  assets/fishing/rod.png            鱼竿
   assets/fishing/basket.png         鱼篓
-  替换素材时覆盖同名文件即可，无需改代码。
+  assets/fishing/cat-sheet.png      奶牛猫设定图（仅非钓鱼界面备用）
+  assets/fishing/rod.png            旧第三人称鱼竿（当前未使用）
+  第一人称的猫爪/鱼竿暂时是 CSS 占位，替换规格见 docs/asset-spec.md。
 -->
 <style>
   :root {
@@ -82,6 +84,9 @@
     height: 100%;
     object-fit: cover;
     z-index: 0;
+    /* 临时：裁掉生成图右下角的水印；换成正稿背景后删掉这两行 */
+    transform-origin: 50% 0;
+    transform: scale(1.09);
   }
   .scene-shade {
     position: absolute;
@@ -176,6 +181,7 @@
     height: 100%;
     object-fit: cover;
     transform: scale(1.55);
+    mix-blend-mode: multiply;
     filter: grayscale(1) brightness(1.14) opacity(.34);
     transition: filter .35s ease;
   }
@@ -195,105 +201,205 @@
     .hud-count { font-size: 11px; }
   }
 
-  /* ============ 小猫相框（CSS 裁切设定图中央立绘） ============ */
-  .cat-frame {
+  /* ============ 第一人称握竿（占位；后续替换 paws-*.png / rod-fp.png） ============ */
+  .fp-line {
     position: absolute;
-    z-index: 4;
-    left: 4%;
-    bottom: calc(100px + var(--safe-bottom));
-    width: 47%;
-    padding: 5px;
-    border-radius: 22px;
-    background: rgba(255, 255, 255, .95);
-    box-shadow: 0 12px 28px rgba(38, 96, 120, .24), 0 2px 0 rgba(255, 255, 255, .8) inset;
-    transform: rotate(-2.5deg);
-    transition: opacity .35s ease;
-    pointer-events: none;
-  }
-  .cat-crop {
-    position: relative;
+    inset: 0;
+    z-index: 2;
     width: 100%;
-    aspect-ratio: 1070 / 1190;
-    overflow: hidden;
-    border-radius: 17px;
-    background: #f8f3e8;
-  }
-  /* 设定图 2848×1600，裁出中央小猫：源区域约 x 1000–2070 / y 280–1470 */
-  .cat-img {
-    position: absolute;
-    width: 266.2%;
-    max-width: none;
-    left: -93.5%;
-    top: -23.5%;
-    display: block;
-  }
-
-  .cat-frame.bobbing { animation: catBob 2.8s ease-in-out infinite; }
-  .cat-frame.nervous { animation: catBite .18s linear infinite; }
-  .cat-frame.reeling { animation: catReel .32s ease-in-out infinite alternate; }
-  .cat-frame.sad { animation: catSad .55s ease; }
-  .cat-frame.hop { animation: catHop .6s cubic-bezier(.2, 1.35, .4, 1); }
-
-  @keyframes catBob {
-    0%, 100% { transform: rotate(-2.5deg) translateY(0); }
-    50% { transform: rotate(-2.5deg) translateY(-5px); }
-  }
-  @keyframes catBite {
-    0%, 100% { transform: rotate(-2.5deg) translate(0, 0); }
-    25% { transform: rotate(-4deg) translate(-3px, -2px); }
-    75% { transform: rotate(-1deg) translate(3px, -3px); }
-  }
-  @keyframes catReel {
-    from { transform: rotate(-3.6deg) translateY(0); }
-    to { transform: rotate(-1.2deg) translateY(-6px); }
-  }
-  @keyframes catSad {
-    0%, 100% { transform: rotate(-2.5deg) translateY(0); }
-    35% { transform: rotate(-1.2deg) translateY(4px); }
-  }
-  @keyframes catHop {
-    0% { transform: rotate(-2.5deg) translateY(0) scale(1); }
-    40% { transform: rotate(-4deg) translateY(-14px) scale(1.04); }
-    70% { transform: rotate(-2deg) translateY(2px) scale(.99); }
-    100% { transform: rotate(-2.5deg) translateY(0) scale(1); }
-  }
-
-  /* ============ 鱼竿（抛竿动画） ============ */
-  .rod-wrap {
-    position: absolute;
-    z-index: 6;
-    right: -12%;
-    bottom: -2%;
-    width: 92%;
-    transform-origin: 70% 85%;
+    height: 100%;
+    pointer-events: none;
     opacity: 0;
+    transition: opacity .22s ease;
+  }
+  .fp-line path {
+    fill: none;
+    stroke: rgba(52, 74, 84, .55);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+  [data-state="waiting"] .fp-line,
+  [data-state="bite"] .fp-line,
+  [data-state="reeling"] .fp-line,
+  [data-state="landing"] .fp-line { opacity: .9; }
+
+  .fp-rig {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
     pointer-events: none;
-    /* 白底素材融入溪流：混合模式放在容器上，避免动画 opacity 造成隔离 */
-    mix-blend-mode: darken;
-    filter: brightness(1.1) contrast(1.03);
   }
-  .rod-wrap img {
-    display: block;
-    width: 100%;
-    height: auto;
+
+  .fp-rod {
+    position: absolute;
+    right: 8%;
+    bottom: 6%;
+    width: 9px;
+    height: 66%;
+    transform-origin: 50% 100%;
+    transform: rotate(-16deg);
+    border-radius: 999px 999px 4px 4px;
+    background:
+      repeating-linear-gradient(180deg, rgba(96, 62, 30, .26) 0 2px, transparent 2px 58px),
+      linear-gradient(90deg, #9c6a36 0%, #e7c78d 38%, #f3ddb0 52%, #c89355 78%, #8d5d2f 100%);
+    box-shadow: 0 0 0 1px rgba(92, 58, 28, .18), 2px 0 6px rgba(40, 30, 20, .12);
+    filter: drop-shadow(0 6px 10px rgba(40, 70, 80, .12));
   }
-  [data-state="casting"] .rod-wrap {
-    animation: rodSwing .9s cubic-bezier(.2, .75, .3, 1) both;
+  .fp-rod::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -2.5%;
+    width: 1.5px;
+    height: 4%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: #6b4724;
   }
-  @keyframes rodSwing {
-    0% { opacity: 0; transform: rotate(18deg) translate(12%, 16%); }
-    22% { opacity: 1; }
-    48% { transform: rotate(-10deg) translate(-4%, -2%); }
-    78% { opacity: 1; }
-    100% { opacity: 0; transform: rotate(-6deg) translate(-2%, 0); }
+  .fp-rod::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -1%;
+    width: 240%;
+    height: 13%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: linear-gradient(90deg, #6b4724, #a9773e 40%, #6b4724);
+    box-shadow: inset 0 2px 0 rgba(255, 230, 190, .35);
+  }
+
+  .fp-paws {
+    position: absolute;
+    right: 4%;
+    bottom: 3%;
+    width: 26%;
+    height: 14%;
+    z-index: 6;
+    transform-origin: 80% 100%;
+  }
+  .paw {
+    position: absolute;
+    border: 1px solid rgba(120, 95, 65, .12);
+    border-radius: 48% 48% 44% 44% / 54% 54% 46% 46%;
+    background:
+      radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .95), transparent 55%),
+      linear-gradient(160deg, #fffaf0 0%, #f0e4d2 58%, #ddc9ad 100%);
+    box-shadow:
+      inset 0 -6px 10px rgba(150, 120, 90, .16),
+      inset 0 2px 0 rgba(255, 255, 255, .9),
+      0 6px 14px rgba(40, 70, 80, .18);
+  }
+  .paw::before {
+    content: "";
+    position: absolute;
+    left: 18%;
+    top: 8%;
+    width: 44%;
+    height: 42%;
+    border-radius: 50% 40% 55% 45%;
+    background: #2f2f33;
+    opacity: .9;
+    transform: rotate(-8deg);
+  }
+  .paw::after {
+    content: "";
+    position: absolute;
+    left: 28%;
+    right: 28%;
+    bottom: 14%;
+    height: 2px;
+    border-radius: 999px;
+    background: rgba(150, 120, 90, .38);
+    box-shadow: 0 -8px 0 rgba(150, 120, 90, .22);
+  }
+  .paw-b::before { display: none; }
+  .paw-a {
+    right: 0;
+    bottom: 0;
+    width: 58%;
+    height: 90%;
+    transform: rotate(-12deg);
+  }
+  .paw-b {
+    right: 42%;
+    bottom: 8%;
+    width: 48%;
+    height: 76%;
+    transform: rotate(9deg);
+  }
+
+  /* 鱼竿 / 猫爪 状态动画 */
+  [data-state="idle"] .fp-rod { animation: rodIdle 4.2s ease-in-out infinite; }
+  [data-state="waiting"] .fp-rod { animation: rodWait 3.2s ease-in-out infinite; }
+  [data-state="casting"] .fp-rod { animation: rodCast .92s cubic-bezier(.2, .75, .3, 1) both; }
+  [data-state="bite"] .fp-rod { animation: rodBite .11s linear infinite; }
+  [data-state="reeling"] .fp-rod { animation: rodReel .3s ease-in-out infinite alternate; }
+  [data-state="landing"] .fp-rod { animation: rodLift .62s cubic-bezier(.2, 1.2, .4, 1) both; }
+  [data-state="miss"] .fp-rod { animation: rodDroop .6s ease both; }
+
+  @keyframes rodIdle {
+    0%, 100% { transform: rotate(-16deg) translateY(0); }
+    50% { transform: rotate(-16.8deg) translateY(-3px); }
+  }
+  @keyframes rodWait {
+    0%, 100% { transform: rotate(-16deg) translateY(0); }
+    50% { transform: rotate(-15.2deg) translateY(-5px); }
+  }
+  @keyframes rodCast {
+    0% { transform: rotate(-2deg) translate(3%, 4%); }
+    22% { transform: rotate(-32deg) translate(-2%, -2%); }
+    58% { transform: rotate(-8deg) translate(0, -1%); }
+    100% { transform: rotate(-16deg) translate(0, 0); }
+  }
+  @keyframes rodBite {
+    0%, 100% { transform: rotate(-16deg) translate(0, 0); }
+    25% { transform: rotate(-17.6deg) translate(-2px, 1px); }
+    75% { transform: rotate(-14.4deg) translate(2px, -1px); }
+  }
+  @keyframes rodReel {
+    from { transform: rotate(-14deg) translateY(0); }
+    to { transform: rotate(-19deg) translateY(-4px); }
+  }
+  @keyframes rodLift {
+    0% { transform: rotate(-16deg); }
+    40% { transform: rotate(-34deg) translate(-1%, -2%); }
+    100% { transform: rotate(-28deg) translate(-1%, -1%); }
+  }
+  @keyframes rodDroop {
+    0% { transform: rotate(-16deg); }
+    100% { transform: rotate(-10deg) translateY(6px); }
+  }
+
+  [data-state="bite"] .paw-a { animation: pawGrip .11s linear infinite; }
+  [data-state="reeling"] .paw-b { animation: pawCrank .3s ease-in-out infinite alternate; }
+  [data-state="landing"] .fp-paws { animation: pawsLift .6s cubic-bezier(.2, 1.2, .4, 1) both; }
+  [data-state="miss"] .fp-paws { animation: pawsDroop .55s ease both; }
+  @keyframes pawGrip {
+    0%, 100% { transform: rotate(-12deg) scale(1); }
+    50% { transform: rotate(-13.5deg) scale(1.035); }
+  }
+  @keyframes pawCrank {
+    from { transform: rotate(9deg) translateY(0); }
+    to { transform: rotate(13deg) translateY(-4px); }
+  }
+  @keyframes pawsLift {
+    0% { transform: translateY(0); }
+    45% { transform: translateY(-10px); }
+    100% { transform: translateY(-4px); }
+  }
+  @keyframes pawsDroop {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(8px); }
   }
 
   /* ============ 浮漂水域 ============ */
   .float-area {
     position: absolute;
     z-index: 3;
-    left: 53%;
-    top: 41%;
+    left: 34%;
+    top: 37%;
     width: 27%;
     aspect-ratio: 1;
     pointer-events: none;
@@ -377,7 +483,7 @@
     transition: opacity .3s ease;
   }
   @keyframes bobberCast {
-    0% { transform: translate(calc(-50% - 150px), calc(-50% - 110px)) scale(.45) rotate(-35deg); opacity: 0; }
+    0% { transform: translate(calc(-50% + 120px), calc(-50% - 90px)) scale(.45) rotate(28deg); opacity: 0; }
     25% { opacity: 1; }
     70% { transform: translate(calc(-50% + 10px), calc(-50% - 16px)) scale(1.06) rotate(12deg); }
     100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
@@ -513,15 +619,16 @@
     text-align: center;
   }
 
-  /* ============ 底部按钮 ============ */
+  /* ============ 底部按钮（左下；右下留给猫爪） ============ */
   .bottom {
     position: absolute;
     z-index: 9;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 10px 18px calc(16px + var(--safe-bottom));
-    background: linear-gradient(180deg, rgba(240, 252, 255, 0) 0%, rgba(236, 250, 255, .76) 42%, rgba(236, 250, 255, .95) 100%);
+    left: 4%;
+    right: auto;
+    width: 54%;
+    bottom: calc(4% + var(--safe-bottom));
+    padding: 0;
+    background: none;
     transition: opacity .25s ease;
   }
   [data-state="card"] .bottom { opacity: 0; pointer-events: none; }
@@ -563,6 +670,143 @@
   @keyframes btnPulse {
     from { box-shadow: 0 8px 0 #c94a2a, 0 12px 24px rgba(255, 100, 70, .34); }
     to { box-shadow: 0 8px 0 #c94a2a, 0 12px 40px rgba(255, 100, 70, .6); }
+  }
+
+  /* ============ 体感设置 ============ */
+  .gyro-fab {
+    position: absolute;
+    z-index: 8;
+    top: calc(64px + var(--safe-top));
+    right: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .78);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 14px rgba(41, 112, 139, .14);
+    color: #2e7e99;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .gyro-fab-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #b8ccd4;
+    transition: background .2s ease, box-shadow .2s ease;
+  }
+  .gyro-fab.on .gyro-fab-dot { background: #4fc3a1; box-shadow: 0 0 0 3px rgba(79, 195, 161, .18); }
+  .gyro-fab.warn .gyro-fab-dot { background: #ff8b62; box-shadow: 0 0 0 3px rgba(255, 139, 98, .16); }
+
+  .gyro-sheet {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 16px 16px calc(16px + var(--safe-bottom));
+    background: rgba(22, 58, 70, .32);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+  }
+  .gyro-card {
+    width: 100%;
+    max-width: 360px;
+    max-height: 82%;
+    overflow-y: auto;
+    padding: 16px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #fff 0%, #f2fbff 100%);
+    box-shadow: 0 20px 50px rgba(20, 70, 90, .32);
+    color: var(--ink);
+  }
+  .gyro-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .gyro-head b { font-size: 16px; letter-spacing: .08em; color: #235e73; }
+  .gyro-close {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(80, 150, 175, .1);
+    color: #4d7d8d;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .gyro-status {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(79, 195, 161, .1);
+    color: #2e7f6b;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  .gyro-status.bad { background: rgba(255, 125, 92, .12); color: #a84b2f; }
+  .gyro-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .gyro-actions button,
+  .gyro-test button {
+    flex: 1;
+    height: 40px;
+    border: 0;
+    border-radius: 12px;
+    background: #e3f3f8;
+    color: #2e7e99;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .gyro-actions button.primary {
+    background: linear-gradient(135deg, #66cbea, #2b93c9);
+    color: #fff;
+    box-shadow: 0 4px 0 #1f7fa8;
+  }
+  .gyro-actions button.primary:active { transform: translateY(2px); box-shadow: 0 2px 0 #1f7fa8; }
+  .gyro-actions button:disabled { opacity: .55; cursor: default; box-shadow: none; }
+  .gyro-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #456b7a;
+  }
+  .gyro-row input[type="range"] { flex: 1; min-width: 0; accent-color: #35a7d6; }
+  .gyro-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: #35a7d6; }
+  .gyro-row span { min-width: 28px; text-align: right; color: #2e7e99; }
+  .gyro-debug {
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 12px;
+    background: #f0f7fa;
+    color: #5b7f8c;
+    font: 11px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace;
+    white-space: pre-wrap;
+  }
+  .gyro-test { display: flex; gap: 8px; margin-top: 10px; }
+  .gyro-note {
+    margin: 10px 0 0;
+    font-size: 11px;
+    line-height: 1.65;
+    color: #7d9aa5;
   }
 
   /* ============ Toast ============ */
@@ -757,8 +1001,8 @@
   .book-fab {
     position: absolute;
     z-index: 7;
-    right: 12px;
-    bottom: calc(96px + var(--safe-bottom));
+    right: 72px;
+    top: calc(64px + var(--safe-top));
     width: 58px;
     height: 62px;
     display: flex;
@@ -1115,7 +1359,7 @@
     .book-grid { gap: 7px; }
     .book-tile { padding: 5px; }
     .book-tile-name { font-size: 11px; }
-    .book-fab { right: 10px; width: 54px; height: 58px; }
+    .book-fab { right: 66px; width: 54px; height: 58px; }
     .book-fab-icon { font-size: 18px; }
   }
 
@@ -1123,12 +1367,10 @@
     .card-fish { width: 66%; }
     .card-name { font-size: 23px; }
     .card-fact { font-size: 12.5px; }
-    .cat-frame { width: 42%; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bubbles, .slot.pop, .prompt, .action-btn[data-tone="bite"], .cat-frame.bobbing,
-    .cat-frame.nervous, .cat-frame.reeling, .cat-frame.sad, .cat-frame.hop { animation: none !important; }
+    .bubbles, .slot.pop, .prompt, .action-btn[data-tone="bite"], .fp-rod, .fp-paws { animation: none !important; }
   }
 </style>
 </head>
@@ -1150,15 +1392,23 @@
     <div class="hud-chip slots" id="slots" aria-label="鱼种收集进度"></div>
   </header>
 
-  <!-- 小猫相框：裁切 cat-sheet.png 中央立绘 -->
-  <div class="cat-frame" id="catFrame">
-    <div class="cat-crop">
-      <img class="cat-img" src="./assets/fishing/cat-sheet.png" alt="钓鱼小猫" draggable="false" decoding="async">
+  <button class="gyro-fab" id="gyroFab" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="体感设置">
+    <span class="gyro-fab-dot" id="gyroDot"></span>体感
+  </button>
+
+  <!-- 第一人称：鱼线（坐标按 9:16 舞台，终点=浮漂中心） -->
+  <svg class="fp-line" id="fpLine" viewBox="0 0 900 1600" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M538 510 Q480 620 428 714" />
+  </svg>
+
+  <!-- 第一人称握竿 + 猫爪（占位素材，后续替换 rod-fp.png / paws-*.png） -->
+  <div class="fp-rig" id="fpRig" aria-hidden="true">
+    <div class="fp-rod" id="fpRod"></div>
+    <div class="fp-paws" id="fpPaws">
+      <span class="paw paw-a"></span>
+      <span class="paw paw-b"></span>
     </div>
   </div>
-
-  <!-- 抛竿时扫入的鱼竿 -->
-  <div class="rod-wrap"><img src="./assets/fishing/rod.png" alt="" draggable="false" decoding="async"></div>
 
   <!-- 浮漂水域 -->
   <div class="float-area">
@@ -1196,6 +1446,35 @@
     <span class="book-fab-icon" aria-hidden="true">📖</span>
     <span class="book-fab-text">图鉴 <b id="bookFabCount">0/4</b></span>
   </button>
+
+  <!-- 体感设置 -->
+  <div class="gyro-sheet" id="gyroSheet" hidden>
+    <div class="gyro-card" role="dialog" aria-modal="true" aria-labelledby="gyroTitle">
+      <div class="gyro-head">
+        <b id="gyroTitle">体感设置</b>
+        <button class="gyro-close" id="gyroClose" type="button" aria-label="关闭">×</button>
+      </div>
+      <div class="gyro-status" id="gyroStatus">陀螺仪：未开启</div>
+      <div class="gyro-actions">
+        <button class="primary" id="gyroEnable" type="button">开启体感</button>
+        <button id="gyroCalibrate" type="button">校准姿势</button>
+      </div>
+      <label class="gyro-row">灵敏度
+        <input id="gyroSensitivity" type="range" min="0.5" max="2" step="0.1" value="1">
+        <span id="gyroSensitivityVal">1.0</span>
+      </label>
+      <label class="gyro-row">反转抛竿方向
+        <input id="gyroInvert" type="checkbox">
+      </label>
+      <div class="gyro-debug" id="gyroDebug">等待动作数据…</div>
+      <div class="gyro-test">
+        <button id="gyroSimCast" type="button">模拟抛竿</button>
+        <button id="gyroSimBite" type="button">模拟咬钩</button>
+        <button id="gyroSimHook" type="button">模拟抬竿</button>
+      </div>
+      <p class="gyro-note">手机需要点上面的「开启体感」并允许动作权限。iOS 要求 HTTPS 页面；电脑没有陀螺仪，可用模拟按钮测试。</p>
+    </div>
+  </div>
 
   <!-- 科普卡片 -->
   <div class="card-overlay" id="cardOverlay" hidden>
@@ -1361,7 +1640,10 @@
   var reelTicks = Array.prototype.slice.call(document.querySelectorAll('.reel-tick'));
   var reelTimeFill = document.getElementById('reelTimeFill');
   var splash = document.getElementById('splash');
-  var catFrame = document.getElementById('catFrame');
+  var fpRig = document.getElementById('fpRig');
+  var fpRod = document.getElementById('fpRod');
+  var fpPaws = document.getElementById('fpPaws');
+  var fpLine = document.getElementById('fpLine');
   var cardOverlay = document.getElementById('cardOverlay');
   var cardBadge = document.getElementById('cardBadge');
   var cardFishImg = document.getElementById('cardFish');
@@ -1394,6 +1676,21 @@
   var bookDetailFact = document.getElementById('bookDetailFact');
   var bookDetailStatus = document.getElementById('bookDetailStatus');
 
+  var gyroFab = document.getElementById('gyroFab');
+  var gyroDot = document.getElementById('gyroDot');
+  var gyroSheet = document.getElementById('gyroSheet');
+  var gyroClose = document.getElementById('gyroClose');
+  var gyroStatus = document.getElementById('gyroStatus');
+  var gyroEnableBtn = document.getElementById('gyroEnable');
+  var gyroCalibrateBtn = document.getElementById('gyroCalibrate');
+  var gyroSensitivity = document.getElementById('gyroSensitivity');
+  var gyroSensitivityVal = document.getElementById('gyroSensitivityVal');
+  var gyroInvert = document.getElementById('gyroInvert');
+  var gyroDebug = document.getElementById('gyroDebug');
+  var gyroSimCast = document.getElementById('gyroSimCast');
+  var gyroSimBite = document.getElementById('gyroSimBite');
+  var gyroSimHook = document.getElementById('gyroSimHook');
+
   var state = 'idle';
   var taps = 0;
   var collected = new Set();
@@ -1402,6 +1699,24 @@
   var resetArmed = false;
   var resetTimer = null;
   var resetNoticeTimer = null;
+
+  var gyroState = {
+    supported: typeof window.DeviceMotionEvent !== 'undefined',
+    enabled: false,
+    baseline: null,
+    beta: 0,
+    gamma: 0,
+    rateBeta: 0,
+    rateGamma: 0,
+    sensitivity: 1,
+    invert: false,
+    samples: 0,
+    lastGesture: '',
+    lastGestureAt: 0,
+    lastDebugAt: 0,
+    castLatch: false,
+    hookLatch: false
+  };
 
   var PROMPT = {
     idle: '溪水清浅，抛一竿试试',
@@ -1498,9 +1813,18 @@
   }
 
   // ======== 状态渲染 ========
+  function promptForState(s) {
+    if (gyroState.enabled) {
+      if (s === 'idle') return '甩手机抛竿，或点按钮';
+      if (s === 'waiting') return '静候鱼讯…咬钩时上挑手机';
+      if (s === 'bite') return '咬钩！上挑手机！';
+    }
+    return PROMPT[s] || '';
+  }
+
   function renderState() {
     stage.dataset.state = state;
-    promptEl.textContent = PROMPT[state] || '';
+    promptEl.textContent = promptForState(state);
 
     var btn = BUTTON[state];
     actionBtn.textContent = btn[0];
@@ -1511,12 +1835,7 @@
   }
 
   function setCatMood(mood) {
-    var moods = ['bobbing', 'nervous', 'reeling', 'sad', 'hop'];
-    catFrame.classList.remove.apply(catFrame.classList, moods);
-    if (mood) {
-      void catFrame.offsetWidth;
-      catFrame.classList.add(mood);
-    }
+    if (fpPaws) fpPaws.dataset.mood = mood || '';
   }
 
   function updateReelUI() {
@@ -1549,11 +1868,18 @@
     delay(function () { toastEl.classList.remove('show'); }, 1300);
   }
 
+  function buzz(pattern) {
+    if (!navigator.vibrate) return;
+    try { navigator.vibrate(pattern); } catch (e) { /* ignore */ }
+  }
+
   // ======== 流程 ========
   function enterIdle() {
     clearTimers();
     state = 'idle';
     taps = 0;
+    gyroState.castLatch = false;
+    gyroState.hookLatch = false;
     resetReelBar();
     updateReelUI();
     cardOverlay.hidden = true;
@@ -1587,10 +1913,12 @@
   function startBite() {
     if (state !== 'waiting') return;
     clearTimers();
+    gyroState.hookLatch = false;
     state = 'bite';
     setCatMood('nervous');
     renderState();
     burstSplash();
+    buzz([30, 45, 30]);
 
     delay(function () {
       if (state === 'bite') miss('迟疑了，鱼跑了');
@@ -1602,8 +1930,10 @@
     clearTimers();
 
     if (Math.random() < CONFIG.CATCH_RATE) {
+      buzz(50);
       startReeling();
     } else {
+      buzz([90, 40, 90]);
       miss('跑鱼了…');
     }
   }
@@ -1659,6 +1989,7 @@
     setCatMood('hop');
     renderState();
     burstSplash();
+    buzz([20, 30, 20, 30, 60]);
 
     var fish = pickFish();
     var isNew = !collected.has(fish.id);
@@ -1725,9 +2056,176 @@
     setCatMood('sad');
     renderState();
     burstSplash();
+    buzz(120);
     showToast(msg, true);
 
     delay(enterIdle, CONFIG.MISS_HOLD);
+  }
+
+  // ======== 体感（陀螺仪）测试 ========
+  var GYRO_THRESH = {
+    RATE: 200,     // 角速度阈值 deg/s
+    CAST: 26,      // 相对基准的前倾角
+    HOOK: 22,      // 相对基准的上挑角
+    COOLDOWN: 520
+  };
+
+  function setGyroStatus(kind) {
+    var map = {
+      off: ['陀螺仪：未开启', ''],
+      on: ['陀螺仪：已开启', 'on'],
+      waiting: ['陀螺仪：已开启，等待动作数据…', 'warn'],
+      denied: ['陀螺仪：权限被拒绝，可继续用按钮', 'warn'],
+      unsupported: ['此设备 / 浏览器不支持陀螺仪，可继续用按钮', 'warn']
+    };
+    var conf = map[kind] || map.off;
+    gyroStatus.textContent = conf[0];
+    gyroStatus.classList.toggle('bad', kind === 'denied' || kind === 'unsupported');
+    gyroFab.classList.toggle('on', kind === 'on' || kind === 'waiting');
+    gyroFab.classList.toggle('warn', kind === 'denied' || kind === 'unsupported');
+  }
+
+  function updateGyroDebug(force) {
+    var now = Date.now();
+    if (!force && now - gyroState.lastDebugAt < 100) return;
+    gyroState.lastDebugAt = now;
+    if (!force && gyroSheet.hidden) return;
+    var delta = gyroState.baseline == null ? 0 : gyroState.beta - gyroState.baseline;
+    gyroDebug.textContent = [
+      '状态：' + (gyroState.enabled ? '已开启' : '未开启') +
+        (gyroState.supported ? '' : '（不支持）'),
+      'beta ' + gyroState.beta.toFixed(1) + '°    gamma ' + gyroState.gamma.toFixed(1) + '°',
+      'rate ' + gyroState.rateBeta.toFixed(1) + '°/s    delta ' + delta.toFixed(1) + '°',
+      '基准 ' + (gyroState.baseline == null ? '--' : gyroState.baseline.toFixed(1)) + '°    样本 ' + gyroState.samples,
+      '最近手势：' + (gyroState.lastGesture || '无')
+    ].join('\n');
+  }
+
+  function gestureAction(kind) {
+    var now = Date.now();
+    if (bookOpen || !gyroSheet.hidden) return;
+    if (now - gyroState.lastGestureAt < GYRO_THRESH.COOLDOWN) return;
+
+    var dir = gyroState.invert ? -1 : 1;
+    var sens = gyroState.sensitivity || 1;
+    var rate = gyroState.rateBeta * dir;
+    var delta = gyroState.baseline == null ? 0 : (gyroState.beta - gyroState.baseline) * dir;
+
+    var cast = rate < -GYRO_THRESH.RATE / sens || delta < -GYRO_THRESH.CAST / sens;
+    var hook = rate > GYRO_THRESH.RATE / sens || delta > GYRO_THRESH.HOOK / sens;
+
+    if (kind === 'cast' && state === 'idle' && cast && !gyroState.castLatch) {
+      gyroState.castLatch = true;
+      gyroState.lastGesture = '抛竿';
+      gyroState.lastGestureAt = now;
+      updateGyroDebug(true);
+      startCast();
+    } else if (kind === 'hook' && state === 'bite' && hook && !gyroState.hookLatch) {
+      gyroState.hookLatch = true;
+      gyroState.lastGesture = '抬竿';
+      gyroState.lastGestureAt = now;
+      updateGyroDebug(true);
+      attemptHook();
+    }
+  }
+
+  function onOrientation(e) {
+    var beta = Number(e.beta);
+    if (!isFinite(beta)) return;
+    gyroState.beta = beta;
+    gyroState.gamma = Number(e.gamma) || 0;
+    gyroState.samples += 1;
+
+    if (gyroState.baseline == null) {
+      gyroState.baseline = beta;
+      updateGyroDebug();
+      return;
+    }
+
+    // 只在静止且未咬钩时缓慢跟随当前姿势，避免把玩家的甩动吃掉
+    if ((state === 'idle' || state === 'waiting') && Math.abs(gyroState.rateBeta) < 35) {
+      gyroState.baseline += (beta - gyroState.baseline) * 0.03;
+    }
+
+    gestureAction('cast');
+    gestureAction('hook');
+    updateGyroDebug();
+  }
+
+  function onMotion(e) {
+    var rr = e.rotationRate;
+    if (rr) {
+      gyroState.rateBeta = Number(rr.beta) || 0;
+      gyroState.rateGamma = Number(rr.gamma) || 0;
+    }
+    gyroState.samples += 1;
+    gestureAction('cast');
+    gestureAction('hook');
+    updateGyroDebug();
+  }
+
+  function enableGyro() {
+    if (gyroState.enabled) return;
+    if (!gyroState.supported) { setGyroStatus('unsupported'); return; }
+
+    window.addEventListener('deviceorientation', onOrientation, { passive: true });
+    window.addEventListener('devicemotion', onMotion, { passive: true });
+    gyroState.enabled = true;
+    gyroState.baseline = null;
+    gyroState.samples = 0;
+    gyroEnableBtn.textContent = '已开启';
+    gyroEnableBtn.disabled = true;
+    setGyroStatus('on');
+    renderState();
+    showToast('体感已开启：先保持姿势，再甩手机抛竿');
+
+    setTimeout(function () {
+      if (gyroState.enabled && gyroState.samples === 0) setGyroStatus('waiting');
+    }, 1600);
+  }
+
+  function requestGyro() {
+    if (!gyroState.supported) { setGyroStatus('unsupported'); return; }
+    if (gyroState.enabled) return;
+
+    var DO = window.DeviceOrientationEvent;
+    var DM = window.DeviceMotionEvent;
+    var asks = [];
+    if (DO && typeof DO.requestPermission === 'function') asks.push(DO.requestPermission());
+    if (DM && typeof DM.requestPermission === 'function') asks.push(DM.requestPermission());
+
+    if (!asks.length) { enableGyro(); return; }
+
+    Promise.all(asks).then(function (results) {
+      if (results.indexOf('granted') !== -1) enableGyro();
+      else setGyroStatus('denied');
+    }).catch(function () {
+      setGyroStatus('denied');
+    });
+  }
+
+  function calibrateGyro() {
+    if (!gyroState.enabled) {
+      showToast('先开启体感再校准', true);
+      return;
+    }
+    gyroState.baseline = gyroState.beta;
+    gyroState.lastGesture = '';
+    gyroState.lastGestureAt = 0;
+    showToast('已按当前姿势校准');
+    updateGyroDebug(true);
+  }
+
+  function openGyroSheet() {
+    gyroSheet.hidden = false;
+    gyroFab.setAttribute('aria-expanded', 'true');
+    gyroState.lastDebugAt = 0;
+    updateGyroDebug(true);
+  }
+
+  function closeGyroSheet() {
+    gyroSheet.hidden = true;
+    gyroFab.setAttribute('aria-expanded', 'false');
   }
 
   // ======== 图鉴 ========
@@ -1926,8 +2424,48 @@
     disarmReset();
     finishReset();
   });
+
+  gyroFab.addEventListener('click', openGyroSheet);
+  gyroClose.addEventListener('click', closeGyroSheet);
+  gyroSheet.addEventListener('click', function (e) {
+    if (e.target === gyroSheet) closeGyroSheet();
+  });
+  gyroEnableBtn.addEventListener('click', requestGyro);
+  gyroCalibrateBtn.addEventListener('click', calibrateGyro);
+  gyroSensitivity.addEventListener('input', function () {
+    gyroState.sensitivity = Number(this.value) || 1;
+    gyroSensitivityVal.textContent = gyroState.sensitivity.toFixed(1);
+  });
+  gyroInvert.addEventListener('change', function () {
+    gyroState.invert = this.checked;
+    gyroState.baseline = gyroState.beta;
+    updateGyroDebug(true);
+  });
+  gyroSimCast.addEventListener('click', function () {
+    if (state === 'idle') startCast();
+    else showToast('现在不是抛竿时机', true);
+  });
+  gyroSimBite.addEventListener('click', function () {
+    if (state === 'waiting') startBite();
+    else showToast('先抛竿，等“静候鱼讯”', true);
+  });
+  gyroSimHook.addEventListener('click', function () {
+    if (state === 'bite') attemptHook();
+    else showToast('现在没有咬钩', true);
+  });
+
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && bookOpen) closeBook();
+    if (e.key === 'Escape') {
+      if (!gyroSheet.hidden) { closeGyroSheet(); return; }
+      if (bookOpen) closeBook();
+      return;
+    }
+    if (e.code === 'Space' && !bookOpen && gyroSheet.hidden) {
+      var tag = document.activeElement && document.activeElement.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      e.preventDefault();
+      if (!actionBtn.disabled) actionBtn.click();
+    }
   });
 
   // 预加载四张鱼图，避免卡片弹出一瞬间空白
@@ -1945,6 +2483,8 @@
   buildSlots();
   resetReelBar();
   updateReelUI();
+  setGyroStatus(gyroState.supported ? 'off' : 'unsupported');
+  updateGyroDebug(true);
   renderState();
 })();
 </script>

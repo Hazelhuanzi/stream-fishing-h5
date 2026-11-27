@@ -2,3 +2,7 @@ __pycache__/
 *.py[cod]
 *.ico
 config.json
+.tunnel/
+.tmp-*
+.DS_Store
+Thumbs.db
